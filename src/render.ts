@@ -114,10 +114,7 @@ function computeCardLayout(
   naturalRows: number
 ): CardLayout {
   const totalCols = Math.min(availW, Math.max(40, naturalCols));
-  // Clamp so the entire card fits the terminal without scrolling.
-  // Total overhead: startRow (HEADER_ROWS + 1 = 6) + card chrome (6) = 12 rows.
-  const maxContentRows = Math.max(1, availH - 12);
-  const contentRows = Math.min(Math.max(1, naturalRows), maxContentRows);
+  const contentRows = Math.max(1, naturalRows);
   const innerW = totalCols - 2;
   const indent = Math.max(0, Math.floor((availW - totalCols) / 2));
   const startRow = HEADER_ROWS + 1;
