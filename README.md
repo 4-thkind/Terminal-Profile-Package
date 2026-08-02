@@ -49,21 +49,6 @@ My portfolio URL lives on a Cloudflare Worker. I got tired of pointing people to
 # just run it
 npx utkarsh-info
 
-# your own image instead of my face
-npx utkarsh-info --image ./me.jpg
-
-# fit a narrower terminal
-npx utkarsh-info --width 100
-
-# slow it down and watch the reveal
-npx utkarsh-info --speed 40
-
-# skip all animation (handy for piping output)
-npx utkarsh-info --fast
-
-# full flag list
-npx utkarsh-info --help
-```
 
 ## How it's built
 
