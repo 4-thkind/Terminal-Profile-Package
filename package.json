@@ -1,0 +1,40 @@
+{
+  "name": "utkarsh-info",
+  "version": "1.0.0",
+  "description": "Render Utkarsh's banner image and portfolio link in the terminal with a line-by-line reveal.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "bin": {
+    "utkarsh-info": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "assets",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cli",
+    "portfolio",
+    "terminal",
+    "image",
+    "utkarsh"
+  ],
+  "dependencies": {
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}
