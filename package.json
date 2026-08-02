@@ -8,7 +8,7 @@
     "node": ">=18.17.0"
   },
   "bin": {
-    "meet-utkarsh": "./dist/index.js"
+    "meet-utkarsh": "dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
