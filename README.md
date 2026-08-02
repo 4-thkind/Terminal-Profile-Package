@@ -1,23 +1,23 @@
 <div align="center">
 
-# utkarsh-info
+# meet-utkarsh
 
 **My entire internet presence, compressed into one terminal screen.**
 
-[![npm package](https://img.shields.io/npm/v/utkarsh-info?color=blue&style=flat-square)](https://www.npmjs.com/package/utkarsh-info)
-[![Node.js Version](https://img.shields.io/node/v/utkarsh-info?style=flat-square)](https://nodejs.org)
+[![npm package](https://img.shields.io/npm/v/meet-utkarsh?color=blue&style=flat-square)](https://www.npmjs.com/package/meet-utkarsh)
+[![Node.js Version](https://img.shields.io/node/v/meet-utkarsh?style=flat-square)](https://nodejs.org)
 
 No website, no image CDN, no gimmick page — just a card that renders itself in your terminal, line by line, with a face, a résumé, and links you can actually click.
 
 ```bash
-npx utkarsh-info
+npx meet-utkarsh
 ```
 
 </div>
 
 ---
 
-## The Pitch
+### The Pitch
 
 Run the command and watch a terminal window titled `@4-thkind/info` assemble itself. 
 
@@ -29,11 +29,15 @@ Every line in the Contact section is a live hyperlink. Cmd-click (or Ctrl-click)
 
 Then you hit any key, and it signs off with `later, space cadet ✦`.
 
-## Why I built it
+---
+
+### Why I built it
 
 My portfolio URL lives on a Cloudflare Worker. I got tired of pointing people to a link and hoping they'd remember it. So I turned the intro into something that *runs* — a command they type once and can't forget, because it's doing its best to be a tiny interactive show.
 
-## What the card contains
+---
+
+### What the card contains
 
 - **A real photo.** Not an emoji, not ASCII art. Actual pixels of my face, portrait-cropped so it fills the side panel without squeezing the text.
 - **A résumé in plain text.** Institute, CGPA, tech stack, AI/ML focus, and cloud tools.
@@ -43,18 +47,22 @@ My portfolio URL lives on a Cloudflare Worker. I got tired of pointing people to
 - **A fake title bar.** A nod to the terminal frame, with a `+ = X` that deliberately does nothing.
 - **A fake prompt.** `[from ashes i claim ~]$` — a one-line flourish. Don't try to type at it.
 
-## Usage
+---
+
+### Usage
 
 ```bash
 # just run it
-npx utkarsh-info
+npx meet-utkarsh
+```
 
+---
 
-## How it's built
+### How it's built
 
 Node ≥ 18.17, zero network calls, no image hosts, no analytics. The whole thing is TypeScript compiled to a single `dist/` that runs on a stock Node install.
 
-## Development
+### Development
 
 ```bash
 npm install
