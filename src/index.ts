@@ -138,11 +138,9 @@ async function main() {
     await sleep(fast ? 1 : 150);
     renderSixelImage(img, { cols: availW, row: 6 });
   } else if (sixelEnabled && isDefaultBanner) {
-    // Size the face to fit the available terminal height.
-    // Total overhead: startRow (6) + card chrome (6) = 12 rows.
-    // Pixel height = terminal-rows × cell-height, rounded to a Sixel band (6 px).
-    const maxFaceRows = Math.max(8, rows - 12);
-    const faceTermRows = Math.min(24, maxFaceRows);
+    // Always size the face to fill the full content area (24 rows).
+    // Scroll tracking in renderCardWithSixelFace handles any terminal overflow.
+    const faceTermRows = 24;
     const SIXEL_BAND = 6;
     const facePixelH = Math.floor(faceTermRows * SIXEL_CELL_H / SIXEL_BAND) * SIXEL_BAND;
     const facePixelW = Math.max(1, Math.round(facePixelH * FACE_ASPECT));
