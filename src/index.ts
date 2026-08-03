@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 import { loadAvatarImage, loadAvatarPNG, loadImage, loadPNG, getImageDims, loadImageAt } from './image.js';
-import { renderCardWithKittyFace, renderCardWithSixelFace, renderSixelImage } from './render.js';
+
 import { hasTrueColor } from './color.js';
 import { renderImage, glitchReveal, waitForKey, sleep, RESET, CLEAR_LINE, BOLD, DIM, CYAN, YELLOW } from './anim.js';
-import { detectKitty, detectSixel, animateKittyImage, fitCols, sixelDims, SIXEL_CELL_W, SIXEL_CELL_H } from './kitty.js';
 
 interface CliArgs {
   image?: string;
   width?: number;
   speed: number;
   colors?: 'truecolor' | '256';
-  kitty: 'auto' | 'on' | 'off';
   fast: boolean;
   help: boolean;
 }
@@ -19,7 +17,7 @@ interface CliArgs {
 const FACE_ASPECT = 0.75;
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { width: undefined, speed: 22, colors: undefined, kitty: 'auto', fast: false, help: false };
+  const args: CliArgs = { width: undefined, speed: 22, colors: undefined, fast: false, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     switch (a) {
@@ -37,12 +35,7 @@ function parseArgs(argv: string[]): CliArgs {
       case '--colors':
         args.colors = argv[++i] === '256' ? '256' : 'truecolor';
         break;
-      case '--kitty':
-        args.kitty = 'on';
-        break;
-      case '--no-kitty':
-        args.kitty = 'off';
-        break;
+
       case '--fast':
         args.fast = true;
         break;
@@ -65,13 +58,8 @@ function printHelp() {
     `  ${CYAN}--width, -w <n>${RESET}     max width in columns (default: fit terminal)`,
     `  ${CYAN}--speed <ms>${RESET}       scanline speed in ms/line (default 22)`,
     `  ${CYAN}--colors <mode>${RESET}    force block-art colors: truecolor | 256`,
-    `  ${CYAN}--kitty${RESET}            force full-res image (kitty graphics protocol)`,
-    `  ${CYAN}--no-kitty${RESET}         use block-art rendering instead`,
     `  ${CYAN}--fast${RESET}             skip animation delays`,
     `  ${CYAN}--help, -h${RESET}         show this help`,
-    ``,
-    `  full-res image uses kitty graphics (kitty, WezTerm, Ghostty) or Sixel`,
-    `  (Windows Terminal 1.22+). Otherwise a pixel-art fallback is used.`,
     ``,
   ];
   msg.forEach((l) => process.stdout.write(l + '\n'));
@@ -89,11 +77,6 @@ async function main() {
   const truecolor = args.colors ? args.colors === 'truecolor' : hasTrueColor();
   const fast = args.fast || !!process.env.UTKARSH_FAST;
 
-  const kittyEnabled =
-    args.kitty === 'on' ||
-    (args.kitty === 'auto' && args.colors !== '256' && (await detectKitty()));
-  const sixelEnabled = args.kitty !== 'on' && args.colors !== '256' && (await detectSixel());
-
   if (tty) {
     process.stdout.write('\x1b[2J\x1b[H');
   }
@@ -109,72 +92,35 @@ async function main() {
 
   const isDefaultBanner = !args.image;
 
-  if (kittyEnabled && !isDefaultBanner) {
-    const maxSource = Math.min(2200, Math.max(1200, cols * 2));
-    const img = await loadPNG(args.image!, maxSource);
-    const finalCols = fitCols(img.width, img.height, availW, rows - 8);
-    log(DIM + `  › source: ${img.source}` + RESET);
-    log(DIM + `  › render: kitty graphics · full-resolution image` + RESET);
-    await sleep(fast ? 1 : 150);
-    const cellsH = await animateKittyImage(img.png, img.width, img.height, {
-      cols: finalCols,
-      row: 6,
-      fast,
-      speed: args.speed,
-    });
-    process.stdout.write(`\x1b[${6 + cellsH};1H`);
-  } else if (kittyEnabled && isDefaultBanner) {
-    const faceImg = await loadAvatarPNG(900, FACE_ASPECT);
-    log(DIM + `  › source: ${faceImg.source}` + RESET);
-    log(DIM + `  › render: sharp terminal banner card (kitty inline photo) · ${availW} cols` + RESET);
-    await sleep(fast ? 1 : 150);
-    await renderCardWithKittyFace(faceImg.png, faceImg.width, faceImg.height, truecolor, availW, rows, fast, args.speed);
-  } else if (sixelEnabled && !isDefaultBanner) {
-    const meta = await getImageDims(args.image);
-    const dims = sixelDims(meta.width, meta.height, availW, rows - 8);
-    const img = await loadImageAt(args.image, dims.w, dims.h);
-    log(DIM + `  › source: ${img.source}` + RESET);
-    log(DIM + `  › render: sixel graphics · full-resolution image · ${availW} cols` + RESET);
-    await sleep(fast ? 1 : 150);
-    renderSixelImage(img, { cols: availW, row: 6 });
-  } else if (sixelEnabled && isDefaultBanner) {
-    // Always size the face to fill the full content area (24 rows).
-    // Scroll tracking in renderCardWithSixelFace handles any terminal overflow.
-    const faceTermRows = 24;
-    const SIXEL_BAND = 6;
-    const facePixelH = Math.floor(faceTermRows * SIXEL_CELL_H / SIXEL_BAND) * SIXEL_BAND;
-    const facePixelW = Math.max(1, Math.round(facePixelH * FACE_ASPECT));
-    const faceImg = await loadAvatarImage(facePixelW, facePixelH, 'west');
-    log(DIM + `  › source: ${faceImg.source}` + RESET);
-    log(DIM + `  › render: sharp terminal banner card (sixel inline photo) · ${availW} cols` + RESET);
-    await sleep(fast ? 1 : 150);
-    await renderCardWithSixelFace(faceImg, truecolor, availW, rows, fast, args.speed);
-  } else {
-    log(YELLOW + DIM + `  › no kitty-graphics detected — this terminal can't show the full-res image` + RESET);
-    log(YELLOW + DIM + `  › pixel-art fallback below (use Windows Terminal / WezTerm / Ghostty / kitty for the real image)` + RESET);
+
+
+  if (!isDefaultBanner) {
+    // Custom image mode
     const img = await loadImage(args.image, availW);
-    let faceImg = undefined;
-    if (isDefaultBanner) {
-      const faceCols = 44;
-      const faceRows = 22;
-      const pixelW = faceCols * 2;                           // 88
-      const pixelH = truecolor ? faceRows * 3 : faceRows * 4; // 66 sextant, 88 halfblock
-      faceImg = await loadAvatarImage(pixelW, pixelH);
-    }
     log(DIM + `  › source: ${img.source}` + RESET);
+    log(DIM + `  › render: ${truecolor ? 'truecolor (24-bit)' : '256-color (dithered)'} high-res block art · ${availW} cols` + RESET);
+    await sleep(fast ? 1 : 150);
+    await renderImage(img, { truecolor, speed: args.speed, fast, availW, availH: rows, isDefaultBanner: false });
+  } else {
+    // Default banner mode: Render face.png inside the card
+    const faceCols = 36;
+    const faceRows = 26;
+    const pixelW = faceCols * 2;                           // 72
+    const pixelH = truecolor ? faceRows * 3 : faceRows * 4; // 78 sextant, 104 halfblock
+    
+    const faceImg = await loadAvatarImage(pixelW, pixelH);
+    log(DIM + `  › source: ${faceImg.source}` + RESET);
     log(
       DIM +
         `  › render: ${
-          isDefaultBanner
-            ? 'sharp terminal banner card'
-            : truecolor
-              ? 'truecolor (24-bit)'
-              : '256-color (dithered)'
-        } · ${availW} cols` +
+          truecolor ? 'truecolor (24-bit)' : '256-color (dithered)'
+        } terminal banner card · ${availW} cols` +
         RESET
     );
     await sleep(fast ? 1 : 150);
-    await renderImage(img, { truecolor, speed: args.speed, fast, availW, availH: rows, isDefaultBanner, faceImg });
+    
+    // Render the text card WITH the image inside it
+    await renderImage(null as any, { truecolor, speed: args.speed, fast, availW, availH: rows, isDefaultBanner: true, faceImg });
   }
 
   log();
