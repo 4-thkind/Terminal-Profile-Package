@@ -1,6 +1,5 @@
 import { rgbForeground, rgbBackground } from './color.js';
 import { ditherRGB } from './quantize.js';
-import { transmitPNG, placeImage, encodeSixel, SIXEL_CELL_W, SIXEL_CELL_H } from './kitty.js';
 import type { LoadedImage } from './image.js';
 
 const HALF_BLOCK = '▀';
@@ -181,7 +180,7 @@ function cardTextLines(p: CardPalette, sep: string): string[] {
 }
 
 export function buildRows(
-  img: LoadedImage,
+  img: LoadedImage | null,
   truecolor: boolean,
   margin = 1,
   availW = 100,
@@ -192,218 +191,27 @@ export function buildRows(
   if (isDefaultBanner) {
     return buildBannerCardRows(img, truecolor, availW, availH, faceImg);
   }
+  if (!img) return [];
   if (truecolor) return buildSextantRows(img, margin);
   return buildHalfBlockRows(img, margin);
 }
 
-/**
- * Render the card with Kitty inline image for the face.
- * Prints the card row-by-row, then overlays the face PNG on top
- * using Kitty graphics placement at the exact cell coordinates.
- */
-export async function renderCardWithKittyFace(
-  facePng: Buffer,
-  faceW: number,
-  faceH: number,
-  truecolor: boolean,
-  availW: number,
-  availH: number,
-  fast = false,
-  speed = 22
-): Promise<void> {
-  const ms = fast ? 1 : speed;
-  const p = cardPalette(truecolor);
 
-  // Size the face so it keeps roughly the same height as before, just narrower
-  const CELL_ASPECT = 2.0;
-  const targetFaceRows = 24;
-  const faceCols = Math.max(1, Math.round((targetFaceRows * CELL_ASPECT) / (faceH / faceW)));
-  const kittyFaceRows = Math.ceil(faceCols * (faceH / faceW) / CELL_ASPECT);
-
-  const textLines = cardTextLines(p, '');
-
-  const naturalCols = faceCols + 3 + MAX_TEXT_W + 5;
-  const naturalRows = Math.max(kittyFaceRows, textLines.length);
-  const layout = computeCardLayout(availW, availH, naturalCols, naturalRows);
-  const { innerW, indent, contentRows, startRow } = layout;
-
-  textLines[1] = p.BORDER + '─'.repeat(Math.max(10, innerW - 1 - Math.min(faceCols, innerW - 3) - 2)) + p.R;
-
-  const contentTopPad = Math.max(0, Math.floor((contentRows - naturalRows) / 2));
-  const cardRows: string[] = [];
-
-  cardRows.push(p.BORDER + '╭' + '─'.repeat(innerW) + '╮' + p.R);
-
-  const titleText = '@4-thkind/info';
-  const leftPad = Math.floor((innerW - titleText.length - 16) / 2);
-  const rightPadN = innerW - titleText.length - 16 - leftPad;
-  cardRows.push(
-    p.BORDER +
-    '│' +
-    p.TITLE_BAR +
-    '  🔍  ' +
-    ' '.repeat(Math.max(0, leftPad)) +
-    p.BOLD +
-    titleText +
-    p.R +
-    p.TITLE_BAR +
-    ' '.repeat(Math.max(0, rightPadN)) +
-    '  + = X  ' +
-    p.R +
-    p.BORDER +
-    '│' +
-    p.R
-  );
-  cardRows.push(p.BORDER + '├' + '─'.repeat(innerW) + '┤' + p.R);
-
-  const faceColsCapped = Math.min(faceCols, innerW - 3);
-  for (let i = 0; i < contentRows; i++) {
-    const contentI = i - contentTopPad;
-    const fl = ' '.repeat(faceColsCapped);
-    const tl = contentI >= 0 ? textLines[contentI] || '' : '';
-    const visLen = getVisualWidth(tl);
-    const padNeeded = Math.max(0, innerW - 1 - faceColsCapped - 2 - visLen);
-    cardRows.push(p.BORDER + '│ ' + p.R + fl + '  ' + tl + ' '.repeat(padNeeded) + p.BORDER + '│' + p.R);
-  }
-
-  const promptText = '[from ashes i claim ~]$ ';
-  const promptVisLen = getVisualWidth(promptText) + 1;
-  const promptPad = Math.max(0, innerW - 1 - promptVisLen);
-  cardRows.push(p.BORDER + '├' + '─'.repeat(innerW) + '┤' + p.R);
-  cardRows.push(p.BORDER + '│ ' + p.R + p.CYAN + p.BOLD + promptText + p.R + '█' + ' '.repeat(promptPad) + p.BORDER + '│' + p.R);
-  cardRows.push(p.BORDER + '╰' + '─'.repeat(innerW) + '╯' + p.R);
-
-  // Move to the vertically-centred start row, then print the card frame/text
-  process.stdout.write(`\x1b[${startRow};1H`);
-  for (const row of cardRows) {
-    process.stdout.write(' '.repeat(indent) + row + '\n');
-    await sleep(ms);
-  }
-
-  // Account for viewport scrolling that may have occurred during card printing
-  const totalCardRows = cardRows.length;
-  const scrollAmount = Math.max(0, startRow + totalCardRows - availH);
-
-  // Overlay the face PNG using Kitty graphics protocol
-  const imgId = 42;
-  transmitPNG(facePng, imgId);
-  const faceRow = startRow + 3 + contentTopPad - scrollAmount;
-  if (faceRow >= 1) {
-    placeImage({
-      id: imgId,
-      col: 3 + indent,
-      row: faceRow,
-      sw: faceW,
-      sh: faceH,
-      cols: faceColsCapped,
-    });
-  }
-  process.stdout.write(`\x1b[${startRow + totalCardRows - scrollAmount};1H`);
-}
-
-export async function renderCardWithSixelFace(
-  faceImg: LoadedImage,
-  truecolor: boolean,
-  availW: number,
-  availH: number,
-  fast = false,
-  speed = 22
-): Promise<void> {
-  const ms = fast ? 1 : speed;
-  const p = cardPalette(truecolor);
-
-  const faceCols = Math.max(1, Math.ceil(faceImg.width / SIXEL_CELL_W));
-  const faceRows = Math.max(1, Math.ceil(faceImg.height / SIXEL_CELL_H));
-
-  const textLines = cardTextLines(p, '');
-
-  const naturalCols = faceCols + 3 + MAX_TEXT_W + 5;
-  const naturalRows = Math.max(faceRows, textLines.length);
-  const layout = computeCardLayout(availW, availH, naturalCols, naturalRows);
-  const { innerW, indent, contentRows, startRow } = layout;
-
-  textLines[1] = p.BORDER + '─'.repeat(Math.max(10, innerW - 1 - Math.min(faceCols, innerW - 3) - 2)) + p.R;
-
-  const contentTopPad = Math.max(0, Math.floor((contentRows - naturalRows) / 2));
-  const cardRows: string[] = [];
-
-  cardRows.push(p.BORDER + '╭' + '─'.repeat(innerW) + '╮' + p.R);
-
-  const titleText = '@4-thkind/info';
-  const leftPad = Math.floor((innerW - titleText.length - 16) / 2);
-  const rightPadN = innerW - titleText.length - 16 - leftPad;
-  cardRows.push(
-    p.BORDER +
-    '│' +
-    p.TITLE_BAR +
-    '  🔍  ' +
-    ' '.repeat(Math.max(0, leftPad)) +
-    p.BOLD +
-    titleText +
-    p.R +
-    p.TITLE_BAR +
-    ' '.repeat(Math.max(0, rightPadN)) +
-    '  + = X  ' +
-    p.R +
-    p.BORDER +
-    '│' +
-    p.R
-  );
-  cardRows.push(p.BORDER + '├' + '─'.repeat(innerW) + '┤' + p.R);
-
-  const faceColsCapped = Math.min(faceCols, innerW - 3);
-  for (let i = 0; i < contentRows; i++) {
-    const contentI = i - contentTopPad;
-    const fl = ' '.repeat(faceColsCapped); // blank — Sixel image overlays here
-    const tl = contentI >= 0 ? textLines[contentI] || '' : '';
-    const visLen = getVisualWidth(tl);
-    const padNeeded = Math.max(0, innerW - 1 - faceColsCapped - 2 - visLen);
-    cardRows.push(p.BORDER + '│ ' + p.R + fl + '  ' + tl + ' '.repeat(padNeeded) + p.BORDER + '│' + p.R);
-  }
-
-  const promptText = '[from ashes i claim ~]$ ';
-  const promptVisLen = getVisualWidth(promptText) + 1;
-  const promptPad = Math.max(0, innerW - 1 - promptVisLen);
-  cardRows.push(p.BORDER + '├' + '─'.repeat(innerW) + '┤' + p.R);
-  cardRows.push(p.BORDER + '│ ' + p.R + p.CYAN + p.BOLD + promptText + p.R + '█' + ' '.repeat(promptPad) + p.BORDER + '│' + p.R);
-  cardRows.push(p.BORDER + '╰' + '─'.repeat(innerW) + '╯' + p.R);
-
-  // Move to the vertically-centred start row, then print the card frame/text
-  process.stdout.write(`\x1b[${startRow};1H`);
-  for (const row of cardRows) {
-    process.stdout.write(' '.repeat(indent) + row + '\n');
-    await sleep(ms);
-  }
-
-  // Account for viewport scrolling that may have occurred during card printing
-  const totalCardRows = cardRows.length;
-  const scrollAmount = Math.max(0, startRow + totalCardRows - availH);
-
-  // Overlay the face using the Sixel protocol at the face area
-  const faceRow = startRow + 3 + contentTopPad - scrollAmount;
-  if (faceRow >= 1) {
-    process.stdout.write(`\x1b[${faceRow};${3 + indent}H`);
-    process.stdout.write(encodeSixel(faceImg.pixels, faceImg.width, faceImg.height, faceImg.channels));
-  }
-
-  // Move cursor to after the card
-  process.stdout.write(`\x1b[${startRow + totalCardRows - scrollAmount};1H`);
-}
 
 export function buildBannerCardRows(
-  img: LoadedImage,
+  img: LoadedImage | null,
   truecolor: boolean,
   availW = 100,
   availH = 40,
   faceImg?: LoadedImage
 ): string[] {
   const p = cardPalette(truecolor);
-  const faceCols = 44;
-
   const targetImg = faceImg || img;
-  const faceLines = truecolor ? buildSextantRows(targetImg, 0) : buildHalfBlockRows(targetImg, 0);
+  
+  const faceCols = targetImg ? 36 : 0;
+  const faceLines = targetImg ? (truecolor ? buildSextantRows(targetImg, 0) : buildHalfBlockRows(targetImg, 0)) : [];
 
-  const rightW = 76 - 1 - faceCols - 2;
+  const rightW = targetImg ? (76 - 1 - faceCols - 2) : 70;
   const sep = '─'.repeat(Math.max(10, rightW - 2));
   const textLines = cardTextLines(p, sep);
 
@@ -442,14 +250,23 @@ export function buildBannerCardRows(
   );
   cardRows.push(' '.repeat(indent) + p.BORDER + '├' + '─'.repeat(innerW) + '┤' + p.R);
 
-  const faceColsCapped = Math.min(faceCols, innerW - 3);
+  const faceColsCapped = Math.min(faceCols, Math.max(0, innerW - 3));
   for (let i = 0; i < contentRows; i++) {
     const contentI = i - contentTopPad;
-    const fl = (contentI >= 0 && faceLines[contentI] ? faceLines[contentI] : ' '.repeat(faceColsCapped));
+    const fl = faceCols > 0 ? (contentI >= 0 && faceLines[contentI] ? faceLines[contentI] : ' '.repeat(faceColsCapped)) : '';
+
     const tl = contentI >= 0 ? textLines[contentI] || '' : '';
     const visLen = getVisualWidth(tl);
-    const padNeeded = Math.max(0, innerW - 1 - faceColsCapped - 2 - visLen);
-    cardRows.push(' '.repeat(indent) + p.BORDER + '│ ' + p.R + fl + '  ' + tl + ' '.repeat(padNeeded) + p.BORDER + '│' + p.R);
+    let midText: string;
+    if (faceCols > 0) {
+      const leftPadLen = Math.max(0, innerW - faceColsCapped - visLen - 3);
+      midText = fl + ' │ ' + tl + ' '.repeat(leftPadLen);
+    } else {
+      const leftPadLen = Math.floor((innerW - visLen) / 2);
+      const rightPadLen = Math.max(0, innerW - visLen - leftPadLen);
+      midText = ' '.repeat(leftPadLen) + tl + ' '.repeat(rightPadLen);
+    }
+    cardRows.push(' '.repeat(indent) + p.BORDER + '│' + p.R + midText + p.BORDER + '│' + p.R);
   }
 
   const promptText = '[from ashes i claim ~]$ ';
@@ -606,19 +423,4 @@ function buildHalfBlockRows(img: LoadedImage, margin: number): string[] {
   return rows;
 }
 
-/**
- * Render a full-resolution image using the Sixel protocol (Windows Terminal 1.22+, xterm, foot).
- * The image is drawn inline at the current cursor position, scaled to `cols` terminal columns.
- * Returns the number of terminal rows the image occupies.
- */
-export function renderSixelImage(
-  img: LoadedImage,
-  opts: { cols: number; row: number }
-): number {
-  const rowsOccupied = Math.max(1, Math.ceil(img.height / SIXEL_CELL_H));
-  process.stdout.write(`\x1b[${opts.row};1H`);
-  process.stdout.write(encodeSixel(img.pixels, img.width, img.height, img.channels));
-  process.stdout.write(`\x1b[${opts.row + rowsOccupied};1H`);
-  return rowsOccupied;
-}
 
