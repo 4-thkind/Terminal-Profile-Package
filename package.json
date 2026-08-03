@@ -29,9 +29,6 @@
     "image",
     "utkarsh"
   ],
-  "dependencies": {
-    "sharp": "^0.33.5"
-  },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "tsx": "^4.16.0",
