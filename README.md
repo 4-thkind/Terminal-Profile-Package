@@ -10,7 +10,7 @@
 No website, no image CDN, no gimmick page — just a card that renders itself in your terminal, line by line, with a face, a résumé, and links you can actually click.
 
 ```bash
-npx meet-utkarsh
+npx meet-utkarsh@latest
 ```
 
 </div>
@@ -53,7 +53,7 @@ My portfolio URL lives on a Cloudflare Worker. I got tired of pointing people to
 
 ```bash
 # just run it
-npx meet-utkarsh
+npx meet-utkarsh@latest
 ```
 
 ---
