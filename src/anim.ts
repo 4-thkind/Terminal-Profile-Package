@@ -20,7 +20,7 @@ const GLITCH_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345
 const randomChar = () => GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
 
 export async function renderImage(
-  img: LoadedImage,
+  img: LoadedImage | null,
   opts: { truecolor: boolean; speed: number; fast: boolean; availW?: number; availH?: number; isDefaultBanner?: boolean; faceImg?: LoadedImage }
 ): Promise<void> {
   const rows = buildRows(img, opts.truecolor, 1, opts.availW ?? 100, opts.isDefaultBanner ?? true, opts.faceImg, opts.availH ?? 40);
