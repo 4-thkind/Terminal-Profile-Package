@@ -260,7 +260,7 @@ export function buildBannerCardRows(
     let midText: string;
     if (faceCols > 0) {
       const leftPadLen = Math.max(0, innerW - faceColsCapped - visLen - 3);
-      midText = fl + ' │ ' + tl + ' '.repeat(leftPadLen);
+      midText = fl + '   ' + tl + ' '.repeat(leftPadLen);
     } else {
       const leftPadLen = Math.floor((innerW - visLen) / 2);
       const rightPadLen = Math.max(0, innerW - visLen - leftPadLen);
