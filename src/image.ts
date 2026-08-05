@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const BUNDLED_IMAGE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'banner.jpg');
-const BUNDLED_FACE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'face.png');
+const BUNDLED_FACE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'night.jpg');
 
 export interface LoadedImage {
   width: number;
