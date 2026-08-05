@@ -103,9 +103,9 @@ async function main() {
     await renderImage(img, { truecolor, speed: args.speed, fast, availW, availH: rows, isDefaultBanner: false });
   } else {
     // Default banner mode: Render face.png inside the card
-    const faceCols = 36;
-    const faceRows = 26;
-    const pixelW = faceCols * 2;                           // 72
+    const faceCols = 40;
+    const faceRows = 28;
+    const pixelW = faceCols * 2;                           // 80
     const pixelH = truecolor ? faceRows * 3 : faceRows * 4; // 78 sextant, 104 halfblock
     
     const faceImg = await loadAvatarImage(pixelW, pixelH);
