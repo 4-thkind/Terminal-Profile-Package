@@ -1,6 +1,6 @@
 {
   "name": "meet-utkarsh",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Render Utkarsh's banner image and portfolio link in the terminal with a line-by-line reveal.",
   "license": "MIT",
   "type": "module",
