@@ -156,9 +156,10 @@ function cardPalette(truecolor: boolean): CardPalette {
 function cardTextLines(p: CardPalette, sep: string): string[] {
   return [
     p.CYAN + p.BOLD + 'Utkarsh Singh' + p.R,
+    '',
     p.BORDER + sep + p.R,
     p.CYAN + p.BOLD + 'Institute: ' + p.R + p.SLATE + 'MAIT, New Delhi · B.Tech CSE (AI)' + p.R,
-    p.CYAN + p.BOLD + 'CGPA: ' + p.R + p.GREEN + p.BOLD + '9.3' + p.R + p.SLATE + ' / 10' + p.R,
+    p.CYAN + p.BOLD + 'CGPA: ' + p.R + p.GREEN + p.BOLD + '9.2' + p.R + p.SLATE + ' / 10' + p.R,
     p.CYAN + p.BOLD + 'Stack: ' + p.R + p.SLATE + 'Python · FastAPI · TypeScript · Node.js' + p.R,
     p.CYAN + p.BOLD + 'AI/ML: ' + p.R + p.SLATE + 'Agentic AI · RAG · GNNs · LLMs' + p.R,
     p.CYAN + p.BOLD + 'Cloud: ' + p.R + p.SLATE + 'AWS · GCP · Docker · GitHub Actions' + p.R,
@@ -208,7 +209,7 @@ export function buildBannerCardRows(
   const p = cardPalette(truecolor);
   const targetImg = faceImg || img;
   
-  const faceCols = targetImg ? 36 : 0;
+  const faceCols = targetImg ? 40 : 0;
   const faceLines = targetImg ? (truecolor ? buildSextantRows(targetImg, 0) : buildHalfBlockRows(targetImg, 0)) : [];
 
   const rightW = targetImg ? (76 - 1 - faceCols - 2) : 70;
