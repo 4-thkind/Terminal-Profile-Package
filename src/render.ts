@@ -77,7 +77,7 @@ function getVisualWidth(str: string): number {
   return width;
 }
 
-const PORTFOLIO_URL = 'https://portfolio.utkarshsingh72007.workers.dev/';
+const PORTFOLIO_URL = 'https://utkarshsingh.me/';
 
 /** OSC 8 hyperlink: renders `label` as a clickable link to `url` (supported by Windows Terminal, kitty, etc.). */
 function hyperlink(url: string, label: string): string {
@@ -180,7 +180,7 @@ function cardTextLines(p: CardPalette, sep: string): string[] {
     '',
     '',
     p.CYAN + p.BOLD + 'Portfolio:' + p.R,
-    p.RED + '🌐  ' + p.R + p.SLATE + hyperlink(PORTFOLIO_URL, 'portfolio.utkarshsingh72007.workers.dev') + p.R,
+    p.RED + '🌐  ' + p.R + p.SLATE + hyperlink(PORTFOLIO_URL, 'utkarshsingh.me') + p.R,
   ];
 }
 
