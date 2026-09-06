@@ -2,7 +2,7 @@
 import { loadAvatarImage, loadAvatarPNG, loadImage, loadPNG, getImageDims, loadImageAt } from './image.js';
 
 import { hasTrueColor } from './color.js';
-import { renderImage, glitchReveal, waitForKey, sleep, RESET, CLEAR_LINE, BOLD, DIM, CYAN, YELLOW } from './anim.js';
+import { renderImage, waitForKey, sleep, RESET, CLEAR_LINE, BOLD, DIM, CYAN, YELLOW } from './anim.js';
 
 interface CliArgs {
   image?: string;
@@ -123,12 +123,7 @@ async function main() {
     await renderImage(null as any, { truecolor, speed: args.speed, fast, availW, availH: rows, isDefaultBanner: true, faceImg });
   }
 
-  log();
-  await sleep(fast ? 1 : 160);
-  await glitchReveal('https://portfolio.utkarshsingh72007.workers.dev/', { truecolor: true, fast });
-  await sleep(fast ? 1 : 140);
 
-  log(DIM + '  ▲ hey that’s me — get more info about me' + RESET);
   log();
   if (tty) {
     process.stdout.write(DIM + '  [ press any key to exit ]' + RESET + CLEAR_LINE);
